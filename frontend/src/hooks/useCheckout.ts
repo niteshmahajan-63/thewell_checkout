@@ -1,0 +1,43 @@
+import { useEffect, useCallback, useState } from 'react'
+import { getCheckoutByRecordId } from '../services/checkoutService'
+
+export const useCheckout = (recordId: string) => {
+    const [clientSecret, setClientSecret] = useState<string | null>(null)
+    const [amount, setAmount] = useState<string | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+
+    const loadCheckoutData = useCallback(async () => {
+        if (!recordId || recordId.trim() === '') return
+
+        try {
+            setIsLoading(true)
+            setError(null)
+
+            const response = await getCheckoutByRecordId(recordId)
+            const record = response.data.record
+            console.log(response.data.client_secret);
+            
+
+            setAmount(record.Amount || null)
+            setClientSecret(response.data.client_secret || null)
+        } catch (error) {
+            setError(error instanceof Error ? error.message : 'Failed to load checkout data')
+        } finally {
+            setIsLoading(false)
+        }
+    }, [recordId])
+
+    useEffect(() => {
+        loadCheckoutData()
+    }, [loadCheckoutData])
+
+    return {
+        recordId,
+        isLoading,
+        error,
+        amount,
+        clientSecret,
+        loadCheckoutData,
+    }
+}
