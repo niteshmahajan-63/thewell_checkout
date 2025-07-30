@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { CheckoutModule } from './checkout/checkout.module';
+import { WebhookModule } from './webhook/webhook.module';
 
 @Module({
 	imports: [
@@ -9,6 +10,7 @@ import { CheckoutModule } from './checkout/checkout.module';
 			envFilePath: '.env',
 		}),
 		CheckoutModule,
+		WebhookModule
 	],
 })
 export class AppModule { }

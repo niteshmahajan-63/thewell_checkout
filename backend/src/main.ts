@@ -35,7 +35,7 @@ async function bootstrap() {
 		}),
 	);
 
-	const port = process.env.PORT || 6000;
+	const port = process.env.PORT || 4000;
 	await app.listen(port);
 	logger.log(`Application started successfully on port ${port}`);
 }

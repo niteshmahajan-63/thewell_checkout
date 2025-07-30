@@ -3,6 +3,7 @@ import { getCheckoutByRecordId } from '../services/checkoutService'
 
 export const useCheckout = (recordId: string) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null)
+    const [completed, setCompleted] = useState<boolean | null>(null)
     const [amount, setAmount] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -16,11 +17,12 @@ export const useCheckout = (recordId: string) => {
 
             const response = await getCheckoutByRecordId(recordId)
             const record = response.data.record
-            console.log(response.data.client_secret);
-            
 
             setAmount(record.Amount || null)
             setClientSecret(response.data.client_secret || null)
+            if(record.Payment_Status === 'succeeded') {
+                setCompleted(true)
+            }
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Failed to load checkout data')
         } finally {
@@ -38,6 +40,8 @@ export const useCheckout = (recordId: string) => {
         error,
         amount,
         clientSecret,
+        completed,
+        setCompleted,
         loadCheckoutData,
     }
 }

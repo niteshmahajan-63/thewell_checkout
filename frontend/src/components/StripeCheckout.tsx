@@ -1,14 +1,18 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Button } from './ui/button'
+import { io, Socket } from 'socket.io-client';
 import {
     Elements,
-    PaymentElement
+    PaymentElement,
+    useElements,
+    useStripe
 } from '@stripe/react-stripe-js'
 import { loadStripe } from '@stripe/stripe-js'
 import type { Appearance as StripeAppearance, StripeElementsOptions } from '@stripe/stripe-js'
 import { env } from '../config/env'
 import { useCheckoutContext } from '../contexts/CheckoutContext'
-import { downloadInvoice } from '../services/checkoutService'
+import { checkPaymentStatus, downloadInvoice } from '../services/checkoutService'
+import PaymentStatusModal from './PaymentStatusModal';
 
 interface Appearance extends StripeAppearance {
     layout?: {
@@ -17,12 +21,158 @@ interface Appearance extends StripeAppearance {
     };
 }
 
+interface CheckoutFormProps {
+    recordId: string;
+}
+
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
-const CheckoutForm: React.FC = () => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
+    const { setCompleted } = useCheckoutContext();
+    const [isLoading, setIsLoading] = useState(false);
+    const [message, setMessage] = useState<string | null>(null);
+    const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
+    const [showStatusModal, setShowStatusModal] = useState(false);
+    const [socketConnected, setSocketConnected] = useState(false);
+    const stripe = useStripe();
+    const elements = useElements();
+    const socketRef = useRef<Socket | null>(null);
+
+    useEffect(() => {
+        console.info(socketConnected);
+
+        if (recordId) {
+            const fetchPaymentStatus = async () => {
+                try {
+                    const status = await checkPaymentStatus(recordId);
+
+                    if (status == 'processing') {
+                        setPaymentStatus('processing');
+                        setMessage('Processing your payment – please don’t refresh or close this window.');
+                        setShowStatusModal(true);
+                    }
+                } catch (err) {
+                    console.error('Stripe payment intent error:', err);
+                }
+            };
+
+            fetchPaymentStatus();
+        }
+
+        if (recordId && !socketRef.current) {
+            const socket = io(`${env.SOCKET_URL}`, {
+                transports: ['websocket'],
+                forceNew: true,
+                timeout: 20000,
+                reconnection: true,
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+            });
+
+            socketRef.current = socket;
+
+            socket.on('connect', () => {
+                setSocketConnected(true);
+                socket.emit('join', { recordID: recordId });
+            });
+
+            socket.on('payment_failed', (data: { paymentId: string; error: string }) => {
+                setMessage(data.error);
+                setPaymentStatus('failed');
+                setShowStatusModal(true);
+            });
+
+            socket.on('payment_succeeded', (data: { paymentId: string }) => {
+                console.info('Payment succeeded:', data);
+                setMessage('Payment successful!');
+                setPaymentStatus('succeeded');
+                setShowStatusModal(false);
+                setCompleted(true);
+                setIsLoading(false);
+            });
+
+            socket.on('connect_error', () => {
+                setSocketConnected(false);
+            });
+
+            socket.on('disconnect', () => {
+                setSocketConnected(false);
+            });
+
+            socket.on('reconnect', () => {
+                setSocketConnected(true);
+                socket.emit('join', { recordID: recordId });
+            });
+        }
+
+        return () => {
+            if (socketRef.current) {
+                socketRef.current.disconnect();
+                socketRef.current = null;
+                setSocketConnected(false);
+            }
+        };
+    }, [recordId]);
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-    }
+
+        if (!stripe || !elements) {
+            return;
+        }
+
+        setIsLoading(true);
+        setMessage(null);
+        setShowStatusModal(false);
+
+        const { error, paymentIntent } = await stripe.confirmPayment({
+            elements,
+            confirmParams: {
+                return_url: window.location.href,
+            },
+            redirect: 'if_required',
+        });
+
+        if (error) {
+            setMessage(error.message || 'An unexpected error occurred.');
+            setIsLoading(false);
+            setShowStatusModal(true);
+            setPaymentStatus('failed');
+            return;
+        }
+
+        if (paymentIntent) {
+            switch (paymentIntent.status) {
+                case 'succeeded':
+                    setMessage('Payment successful!');
+                    setPaymentStatus('succeeded');
+                    setShowStatusModal(true);
+                    setCompleted(true);
+                    setIsLoading(false);
+                    break;
+
+                case 'processing':
+                    const processingMessage = `Processing your payment – please don’t refresh or close this window.`;
+                    setMessage(processingMessage);
+                    setPaymentStatus('processing');
+                    setShowStatusModal(true);
+                    setIsLoading(false);
+                    break;
+
+                default:
+                    setMessage(`Payment status: ${paymentIntent.status}`);
+                    setShowStatusModal(true);
+                    setIsLoading(false);
+                    break;
+            }
+        }
+    };
+
+    const handleCloseModal = () => {
+        setShowStatusModal(false);
+        setPaymentStatus('idle');
+        setMessage(null);
+    };
 
     return (
         <form onSubmit={handleSubmit} className="w-full">
@@ -42,16 +192,46 @@ const CheckoutForm: React.FC = () => {
                 </div>
             </div>
 
+            {showStatusModal && paymentStatus !== 'idle' && message && (
+                <PaymentStatusModal
+                    status={paymentStatus}
+                    message={message}
+                    onClose={paymentStatus === 'failed' ? handleCloseModal : undefined}
+                />
+            )}
+
             <div className="max-w-lg mx-auto">
                 <Button
                     type="submit"
-                    className={`px-6 py-3 w-full rounded-md font-medium transition-all duration-200 transform hover:-translate-y-0.5 hover:shadow-lg`}
+                    disabled={isLoading || !stripe || !elements || paymentStatus === 'processing'}
+                    className={`px-6 py-3 w-full rounded-md font-medium transition-all duration-200 ${isLoading || !stripe || !elements || paymentStatus === 'processing'
+                        ? 'opacity-70 cursor-not-allowed'
+                        : 'transform hover:-translate-y-0.5 hover:shadow-lg'
+                        }`}
                     style={{
-                        backgroundColor: '#BE9E44',
+                        backgroundColor: (isLoading || !stripe || !elements || paymentStatus === 'processing') ? '#D4BC76' : '#BE9E44',
                         color: '#fff',
                     }}
+                    onMouseOver={(e) => {
+                        if (!isLoading && stripe && elements && paymentStatus !== 'processing') {
+                            e.currentTarget.style.backgroundColor = '#967D35'
+                        }
+                    }}
+                    onMouseOut={(e) => {
+                        if (!isLoading && stripe && elements && paymentStatus !== 'processing') {
+                            e.currentTarget.style.backgroundColor = '#BE9E44'
+                        }
+                    }}
                 >
-                    Pay Now
+                    {isLoading ? (
+                        <span className="flex items-center justify-center space-x-2">
+                            <svg className="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Processing...</span>
+                        </span>
+                    ) : 'Pay Now'}
                 </Button>
             </div>
         </form>
@@ -60,7 +240,6 @@ const CheckoutForm: React.FC = () => {
 
 const StripeCheckout: React.FC = () => {
     const { recordId, amount, clientSecret, error } = useCheckoutContext();
-    
 
     const appearance: Appearance = {
         theme: 'flat',
@@ -221,7 +400,7 @@ const StripeCheckout: React.FC = () => {
                     ) : (
                         <div className="bg-white border border-gray-200 rounded-lg p-3 sm:p-6 shadow-sm hover:shadow-md transition-all duration-200">
                             <Elements stripe={stripePromise} options={options}>
-                                <CheckoutForm />
+                                <CheckoutForm recordId={recordId} />
                             </Elements>
                         </div>
                     )}

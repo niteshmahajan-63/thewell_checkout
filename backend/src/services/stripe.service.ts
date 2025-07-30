@@ -23,58 +23,6 @@ export class StripeService {
         }
     }
 
-    /**
-     * Creates a payment intent for Stripe Elements
-     * @param recordId The record ID for the payment intent
-     * @param stripeCustomerId The Stripe customer ID
-     * @param amount The amount to be charged in cents
-     * @returns The payment intent client secret and id
-     */
-    async createPaymentIntent(recordId: string, stripeCustomerId: string, amount: number): Promise<{ client_secret: string, invoice_id: string }> {
-        try {
-            const invoice = await this.stripe.invoices.create({
-                customer: stripeCustomerId,
-                collection_method: 'send_invoice',
-                days_until_due: 0,
-                metadata: {
-                    recordId: recordId,
-                },
-                payment_settings: {
-                    payment_method_types: ['card', 'us_bank_account'],
-                }
-            });
-
-            if (invoice) {
-                await this.stripe.invoiceItems.create({
-                    customer: stripeCustomerId,
-                    amount: amount,
-                    currency: 'usd',
-                    invoice: invoice.id,
-                    description: `Engagement Setup Fee`
-                });
-
-                const finalizedInvoice = await this.stripe.invoices.finalizeInvoice(invoice.id, {
-                    expand: ['confirmation_secret'],
-                });
-
-                if (finalizedInvoice) {
-                    const client_secret = finalizedInvoice.confirmation_secret.client_secret;
-
-                    return {
-                        client_secret: client_secret,
-                        invoice_id: invoice.id,
-                    };
-                } else {
-                    throw new Error('Failed to finalize invoice');
-                }
-            } else {
-                throw new Error('Failed to create invoice');
-            }
-        } catch (error) {
-            throw new Error(`Failed to create payment intent: ${error.message}`);
-        }
-    }
-
     async getPaymentIntent(paymentIntentId: string): Promise<{ status: string, amount: number, currency: string }> {
         try {
             const paymentIntent = await this.stripe.paymentIntents.retrieve(paymentIntentId);
@@ -111,6 +59,14 @@ export class StripeService {
                 days_until_due: 0,
                 payment_settings: {
                     payment_method_types: ['card', 'us_bank_account', 'customer_balance'],
+                    payment_method_options: {
+                        customer_balance: {
+                            bank_transfer: {
+                                type: 'us_bank_transfer'
+                            },
+                            funding_type: 'bank_transfer'
+                        }
+                    }
                 }
             });
 

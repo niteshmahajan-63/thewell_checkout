@@ -23,6 +23,8 @@ model CheckoutClient {
   paymentStatus             String?                @map("payment_status")
   crmPaymentRecordId        String?                @map("crm_payment_record_id")
   invoiceType               String?                @map("invoice_type")
+  hostedInvoiceUrl          String?                @map("hosted_invoice_url")
+  errorMessage              String?                @map("error_message")
   createdAt                 DateTime               @default(now()) @map("created_at")
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   invoiceItems              CheckoutInvoiceItems[]

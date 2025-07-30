@@ -20,10 +20,10 @@ export class CheckoutController {
 
 			return createSuccessResponse(
 				result,
-				'Record and onboarding steps retrieved successfully'
+				'Record retrieved successfully'
 			);
         } catch (error) {
-            this.logger.error(`Failed to fetch record with steps for ${recordId}:`, error.message);
+            this.logger.error(`Failed to fetch record for ${recordId}:`, error.message);
             throw error;
         }
     }
@@ -39,4 +39,38 @@ export class CheckoutController {
             throw error;
         }
     }
+
+    @Get('download-invoice')
+	async downloadInvoice(
+		@Query() query: GetRecordByIdDto
+	): Promise<ApiResponse<string>> {
+		const { recordId } = query;
+
+		this.logger.log(`Downloading invoice for record: ${recordId}`);
+
+		try {
+			const pandadocSessionId = await this.checkoutService.downloadInvoice(recordId);
+			return createSuccessResponse(pandadocSessionId, 'Invoice downloaded successfully');
+		} catch (error) {
+			this.logger.error(`Failed to download invoice for record ${recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Get('download-due-invoice')
+	async downloadDueInvoice(
+		@Query() query: GetRecordByIdDto
+	): Promise<ApiResponse<string>> {
+		const { recordId } = query;
+
+		this.logger.log(`Downloading due invoice for record: ${recordId}`);
+
+		try {
+			const pandadocSessionId = await this.checkoutService.downloadDueInvoice(recordId);
+			return createSuccessResponse(pandadocSessionId, 'Due invoice downloaded successfully');
+		} catch (error) {
+			this.logger.error(`Failed to download due invoice for record ${recordId}:`, error.message);
+			throw error;
+		}
+	}
 }

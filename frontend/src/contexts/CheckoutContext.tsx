@@ -7,6 +7,8 @@ interface CheckoutContextType {
   clientSecret: string | null
   amount: string | null
   error: string | null
+  completed: boolean | null
+  setCompleted: (completed: boolean | null) => void
   loadCheckoutData: () => Promise<void>
 }
 
