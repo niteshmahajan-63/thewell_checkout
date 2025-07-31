@@ -40,11 +40,11 @@ export class StripeService {
         try {
             const paymentMethod = await this.stripe.paymentMethods.retrieve(paymentMethodId);
             if (paymentMethod.type === 'us_bank_account') {
-                return 'Bank Transfer';
+                return 'ACH';
             } else if (paymentMethod.type === 'card') {
                 return 'Credit Card/Debit Card';
             } else {
-                return '';
+                return 'Bank Transfer';
             }
         } catch (error) {
             throw new Error(`Failed to retrieve payment method: ${error.message}`);
@@ -75,11 +75,8 @@ export class StripeService {
                     await this.stripe.invoiceItems.create({
                         customer: record.Stripe_Customer_ID,
                         invoice: invoice.id,
-                        pricing: {
-                            price: item.Stripe_Price_ID
-                        },
-                        description: item.Product_Description,
-                        quantity: Number(item.Quantity) || 1,
+                        amount: item.Amount * 100,
+                        description: `${item.Product_Name}, ${item.Product_Description}`,
                     });
                 }
 

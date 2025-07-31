@@ -5,6 +5,7 @@ export const useCheckout = (recordId: string) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null)
     const [completed, setCompleted] = useState<boolean | null>(null)
     const [amount, setAmount] = useState<string | null>(null)
+    const [company, setCompany] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
 
@@ -18,7 +19,8 @@ export const useCheckout = (recordId: string) => {
             const response = await getCheckoutByRecordId(recordId)
             const record = response.data.record
 
-            setAmount(record.Amount || null)
+            setAmount(record.Total_Amount || null)
+            setCompany(record.Company_Name || null)
             setClientSecret(response.data.client_secret || null)
             if(record.Payment_Status === 'succeeded') {
                 setCompleted(true)
@@ -39,6 +41,7 @@ export const useCheckout = (recordId: string) => {
         isLoading,
         error,
         amount,
+        company,
         clientSecret,
         completed,
         setCompleted,

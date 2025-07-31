@@ -23,7 +23,7 @@ export class CheckoutService {
         const checkoutData = {
             zohoRecordId: zohoRecord.ID,
             stripeCustomerId: zohoRecord.Stripe_Customer_ID || null,
-            amount: zohoRecord.Amount || null,
+            amount: zohoRecord.Total_Amount || null,
             subscriptionScheduledDays: zohoRecord.Subscription_Scheduled_Days || null,
             stripeInvoiceID: zohoRecord.Stripe_Invoice_ID || null,
             invoiceName: zohoRecord.Invoice_Name || null,
@@ -33,6 +33,7 @@ export class CheckoutService {
             paymentStatus: zohoRecord.Payment_Status || null,
             crmPaymentRecordId: zohoRecord.CRM_Payment_Record_ID || null,
             invoiceType: zohoRecord.Invoice_Type || null,
+            companyName: zohoRecord.Company_Name || null,
         };
 
         try {
@@ -83,7 +84,7 @@ export class CheckoutService {
         } else {
             const paymentIntent = await this.stripeService.createCheckoutPaymentIntent(zohoRecord);
             if (paymentIntent) {
-                // await this.getRecordById(zohoRecord);
+                await this.getRecordById(zohoRecord);
                 client_secret = paymentIntent.client_secret;
                 const invoice_id = paymentIntent.invoice_id;
                 await this.checkoutRepository.upsertCheckout({
@@ -91,7 +92,7 @@ export class CheckoutService {
                     clientSecret: client_secret,
                     stripeInvoiceID: invoice_id,
                     stripeCustomerId: zohoRecord.Stripe_Customer_ID,
-                    amount: zohoRecord.Amount,
+                    amount: zohoRecord.Total_Amount,
                 });
             }
         }

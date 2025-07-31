@@ -6,6 +6,7 @@ interface CheckoutContextType {
   recordId: string
   clientSecret: string | null
   amount: string | null
+  company: string | null
   error: string | null
   completed: boolean | null
   setCompleted: (completed: boolean | null) => void

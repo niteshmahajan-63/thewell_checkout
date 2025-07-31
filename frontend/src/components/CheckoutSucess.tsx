@@ -38,7 +38,7 @@ const CheckoutSucess: React.FC<CheckoutSucessProps> = ({ recordId }) => {
                                 }}
                             >
                                 <p className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#000' }}>Payment Complete!</p>
-                                <p className="text-base sm:text-lg" style={{ color: '#000' }}>Thank you for completing your payment. You're all set, and we're excited to start working with you!</p>
+                                <p className="text-base sm:text-lg" style={{ color: '#000' }}>Thank you for completing your payment.</p>
                                 <button
                                     className="mt-6 sm:mt-8 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-base font-semibold shadow transition-colors"
                                     style={{ backgroundColor: '#BE9E44', color: '#fff', border: '1px solid #000', borderRadius: 0 }}

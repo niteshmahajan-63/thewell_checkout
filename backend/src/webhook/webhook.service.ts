@@ -78,11 +78,16 @@ export class WebhookService {
             let amount = 0;
 
             switch (eventType) {
+                case 'payment_intent.created':
+                    this.logger.log('Stripe payment intent created');
+                    return {
+                        message: 'Stripe payment_intent.created event processed successfully',
+                        success: true
+                    };
                 case 'payment_intent.succeeded':
                     this.logger.log('Stripe payment intent succeeded');
-
                     recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
-                    if (recordExist) {
+                    if (recordExist && recordExist.paymentStatus !== 'succeeded') {
                         invoice = '';
                         if ('invoice' in paymentIntent && paymentIntent.invoice) {
                             invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
@@ -92,7 +97,7 @@ export class WebhookService {
                             formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
                         }
 
-                        if (formattedPaymentSource === "Bank Transfer") {
+                        if (formattedPaymentSource === "Bank Transfer" || formattedPaymentSource === "ACH") {
                             this.paymentGateway.emitPaymentSucceededToRecord(recordExist.zohoRecordId, {
                                 paymentId: paymentIntent.id
                             });
@@ -106,7 +111,7 @@ export class WebhookService {
                             paymentDate: new Date(paymentIntent.created * 1000),
                             paymentStatus: paymentIntent.status,
                             stripePaymentId: paymentIntent.id,
-                            amount: amount.toString(),
+                            amount: amount.toFixed(2),
                             paymentSource: formattedPaymentSource,
                             stripeInvoiceID: invoice ? invoice.id : null,
                             hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
@@ -130,12 +135,11 @@ export class WebhookService {
                     } else {
                         break;
                     }
-
                 case 'payment_intent.payment_failed':
                     this.logger.error('Stripe payment intent failed');
 
                     recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
-                    if (recordExist) {
+                    if (recordExist && recordExist.paymentStatus !== 'failed') {
                         const errorMessage = paymentIntent.last_payment_error
                             ? paymentIntent.last_payment_error.message
                             : 'Unknown error';
@@ -165,7 +169,7 @@ export class WebhookService {
                             paymentDate: new Date(paymentIntent.created * 1000),
                             paymentStatus: 'failed',
                             stripePaymentId: paymentIntent.id,
-                            amount: amount.toString(),
+                            amount: amount.toFixed(2),
                             paymentSource: formattedPaymentSource,
                             stripeInvoiceID: invoice ? invoice.id : null,
                             hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
@@ -186,7 +190,7 @@ export class WebhookService {
                     this.logger.log('Stripe payment intent is processing');
 
                     recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
-                    if (recordExist) {
+                    if (recordExist && recordExist.paymentStatus === '') {
                         invoice = '';
                         if ('invoice' in paymentIntent && paymentIntent.invoice) {
                             invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
@@ -203,7 +207,7 @@ export class WebhookService {
                             paymentDate: new Date(paymentIntent.created * 1000),
                             paymentStatus: paymentIntent.status,
                             stripePaymentId: paymentIntent.id,
-                            amount: amount.toString(),
+                            amount: amount.toFixed(2),
                             paymentSource: formattedPaymentSource,
                             stripeInvoiceID: invoice ? invoice.id : null,
                             hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,

@@ -86,7 +86,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                 console.info('Payment succeeded:', data);
                 setMessage('Payment successful!');
                 setPaymentStatus('succeeded');
-                setShowStatusModal(false);
+                setShowStatusModal(true);
                 setCompleted(true);
                 setIsLoading(false);
             });
@@ -239,7 +239,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 };
 
 const StripeCheckout: React.FC = () => {
-    const { recordId, amount, clientSecret, error } = useCheckoutContext();
+    const { recordId, company, amount, clientSecret, error } = useCheckoutContext();
 
     const appearance: Appearance = {
         theme: 'flat',
@@ -325,7 +325,7 @@ const StripeCheckout: React.FC = () => {
                         {/* Plan Information - Aligned with image left edge */}
                         <div className="mb-8 w-full max-w-[30rem] px-4 sm:px-0 text-left">
                             <div className="inline-flex items-center py-1 rounded-full bg-white/10 mb-3">
-                                <span className="text-black text-sm font-medium">{'Company'}</span>
+                                <span className="text-black text-sm font-medium">{company || 'Company'}</span>
                             </div>
                             <div className="flex items-baseline justify-start">
                                 <span className="text-xl sm:text-2xl font-bold text-black leading-none">

@@ -15,12 +15,13 @@ export interface CheckoutRecord {
     Stripe_Customer_ID: string;
     Stripe_Payment_ID: string;
     Payment_Status: string;
-    Amount: string;
+    Total_Amount: string;
     Stripe_Invoice_ID: string;
     Invoice_Name: string;
     CRM_Payment_Record_ID: string;
     Payment_Source: string;
     Invoice_Type: string;
+    Company_Name: string;
     dbId: string;
     Invoiced_Items: InvoicedItems[];
 }
