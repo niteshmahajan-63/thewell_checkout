@@ -329,7 +329,7 @@ const StripeCheckout: React.FC = () => {
                             </div>
                             <div className="flex items-baseline justify-start">
                                 <span className="text-xl sm:text-2xl font-bold text-black leading-none">
-                                    ${amount ? Number(amount).toFixed(2) : '0.00'}
+                                    ${amount ? Number(amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '0.00'}
                                 </span>
                             </div>
                         </div>
