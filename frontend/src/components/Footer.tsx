@@ -14,8 +14,9 @@ const Footer: React.FC = () => {
                     </div>
 
                     <div className="text-center text-gray-400 space-y-1 sm:space-y-2">
-                        <p className="font-medium text-sm sm:text-base">7807 Creekside Circle, Suite #305</p>
-                        <p className="text-sm sm:text-base">Bloomington MN 55439</p>
+                        <p className="font-medium text-sm sm:text-base">The Well Recruiting Solutions</p>
+                        <p className="text-sm sm:text-base">21501 N. 78th Ave #100</p>
+                        <p className="text-sm sm:text-base">Peoria, AZ 85382</p>
                         <p className="font-medium text-sm sm:text-base" style={{ color: '#cbb26a' }}>info@emailthewell.com</p>
                     </div>
 
