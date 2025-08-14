@@ -28,7 +28,7 @@ interface CheckoutFormProps {
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
-    const { setCompleted } = useCheckoutContext();
+    const { setCompleted, email } = useCheckoutContext();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
@@ -40,7 +40,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 
     useEffect(() => {
         console.info(socketConnected);
-
         if (recordId) {
             const fetchPaymentStatus = async () => {
                 try {
@@ -129,6 +128,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
             elements,
             confirmParams: {
                 return_url: window.location.href,
+                payment_method_data: {
+                    billing_details: {
+                        email: email,
+                    }
+                }
             },
             redirect: 'if_required',
         });
@@ -185,6 +189,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                                 defaultCollapsed: false,
                                 radios: false,
                                 spacedAccordionItems: false
+                            },
+                            fields: {
+                                billingDetails: {
+                                    email: 'never'
+                                }
                             },
                             paymentMethodOrder: ['card', 'us_bank_account', 'customer_balance'],
                         }}

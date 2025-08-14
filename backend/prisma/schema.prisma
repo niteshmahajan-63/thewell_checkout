@@ -26,6 +26,7 @@ model CheckoutClient {
   hostedInvoiceUrl          String?                @map("hosted_invoice_url")
   errorMessage              String?                @map("error_message")
   companyName               String?                @map("company_name")
+  customerEmail             String?                @map("customer_email")
   createdAt                 DateTime               @default(now()) @map("created_at")
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   invoiceItems              CheckoutInvoiceItems[]

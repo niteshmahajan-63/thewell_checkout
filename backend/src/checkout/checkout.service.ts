@@ -34,6 +34,7 @@ export class CheckoutService {
             crmPaymentRecordId: zohoRecord.CRM_Payment_Record_ID || null,
             invoiceType: zohoRecord.Invoice_Type || null,
             companyName: zohoRecord.Company_Name || null,
+            customerEmail: zohoRecord.Customer_Email || null,
         };
 
         try {

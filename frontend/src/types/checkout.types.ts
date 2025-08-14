@@ -22,6 +22,7 @@ export interface CheckoutRecord {
     Payment_Source: string;
     Invoice_Type: string;
     Company_Name: string;
+    Customer_Email: string;
     dbId: string;
     Invoiced_Items: InvoicedItems[];
 }
