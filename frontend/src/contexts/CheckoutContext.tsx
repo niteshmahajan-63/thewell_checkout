@@ -5,6 +5,7 @@ import { useCheckout } from '../hooks/useCheckout'
 interface CheckoutContextType {
   recordId: string
   clientSecret: string | null
+  deactivatedLink: string | null
   amount: string | null
   company: string | null
   email: string | null

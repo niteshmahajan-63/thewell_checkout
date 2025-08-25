@@ -35,6 +35,7 @@ export class CheckoutService {
             invoiceType: zohoRecord.Invoice_Type || null,
             companyName: zohoRecord.Company_Name || null,
             customerEmail: zohoRecord.Customer_Email || null,
+            deactivatedLink: zohoRecord.Deactivated_Link || null,
         };
 
         try {

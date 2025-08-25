@@ -3,6 +3,7 @@ import { getCheckoutByRecordId } from '../services/checkoutService'
 
 export const useCheckout = (recordId: string) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null)
+    const [deactivatedLink, setDeactivatedLink] = useState<string | null>(null)
     const [completed, setCompleted] = useState<boolean | null>(null)
     const [amount, setAmount] = useState<string | null>(null)
     const [company, setCompany] = useState<string | null>(null)
@@ -20,6 +21,7 @@ export const useCheckout = (recordId: string) => {
             const response = await getCheckoutByRecordId(recordId)
             const record = response.data.record
 
+            setDeactivatedLink(record.Deactivated_Link)
             setAmount(record.Total_Amount || null)
             setCompany(record.Company_Name || null)
             setEmail(record.Customer_Email || null)
@@ -42,6 +44,7 @@ export const useCheckout = (recordId: string) => {
         recordId,
         isLoading,
         error,
+        deactivatedLink,
         amount,
         company,
         email,

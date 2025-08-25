@@ -25,6 +25,7 @@ export interface CheckoutRecord {
     Customer_Email: string;
     dbId: string;
     Invoiced_Items: InvoicedItems[];
+    Deactivated_Link: string;
 }
 
 export interface InvoicedItems {

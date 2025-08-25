@@ -27,6 +27,7 @@ model CheckoutClient {
   errorMessage              String?                @map("error_message")
   companyName               String?                @map("company_name")
   customerEmail             String?                @map("customer_email")
+  deactivatedLink           String?                @map("deactivated_link")
   createdAt                 DateTime               @default(now()) @map("created_at")
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   invoiceItems              CheckoutInvoiceItems[]
