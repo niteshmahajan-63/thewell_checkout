@@ -52,7 +52,7 @@ export class StripeService {
     }
 
     async createCheckoutPaymentIntent(record: Record<string, any>) {
-        if (record.Invoice_Type == "Only Placement Fee" || record.Invoice_Type == "Only Setup Fee") {
+        if (record.Invoice_Type == "Only Placement Fee" || record.Invoice_Type == "Only Setup Fee" || record.Invoice_Type == "Retainer Fee") {
             const invoice = await this.stripe.invoices.create({
                 customer: record.Stripe_Customer_ID,
                 collection_method: 'send_invoice',

@@ -11,7 +11,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import type { Appearance as StripeAppearance, StripeElementsOptions } from '@stripe/stripe-js'
 import { env } from '../config/env'
 import { useCheckoutContext } from '../contexts/CheckoutContext'
-import { checkPaymentStatus, downloadInvoice } from '../services/checkoutService'
+import { downloadInvoice } from '../services/checkoutService'
 import PaymentStatusModal from './PaymentStatusModal';
 
 interface Appearance extends StripeAppearance {
@@ -39,25 +39,6 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
     const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
-        console.info(socketConnected);
-        if (recordId) {
-            const fetchPaymentStatus = async () => {
-                try {
-                    const status = await checkPaymentStatus(recordId);
-
-                    if (status == 'processing') {
-                        setPaymentStatus('processing');
-                        setMessage('Processing your payment – please don’t refresh or close this window.');
-                        setShowStatusModal(true);
-                    }
-                } catch (err) {
-                    console.error('Stripe payment intent error:', err);
-                }
-            };
-
-            fetchPaymentStatus();
-        }
-
         if (recordId && !socketRef.current) {
             const socket = io(`${env.SOCKET_URL}`, {
                 transports: ['websocket'],
@@ -72,6 +53,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 
             socket.on('connect', () => {
                 setSocketConnected(true);
+                console.info("socketConnected: ",socketConnected);
                 socket.emit('join', { recordID: recordId });
             });
 

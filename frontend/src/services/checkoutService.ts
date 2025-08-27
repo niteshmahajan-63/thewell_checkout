@@ -99,38 +99,3 @@ export const downloadInvoice = async (recordId: string): Promise<DownloadInvoice
         throw new Error(message);
     }
 };
-
-export const checkPaymentStatus = async (recordId: string): Promise<string> => {
-    try {
-        console.log(recordId);
-        const response = {
-            success: true,
-            data: {
-                status: "succeeded"
-            },
-            message: "Record retrieved successfully",
-            timestamp: "2025-07-26T10:20:05.466Z",
-            statusCode: 200
-        };
-
-        return response.data.status;
-    } catch (error: any) {
-        if (error.response?.data) {
-            const apiError = error.response.data;
-            if (!apiError.success) {
-                const errorMessage = apiError.message || "Failed to fetch payment intent status";
-                throw new Error(errorMessage);
-            }
-        }
-
-        let message = "Something went wrong while fetching payment intent status";
-        if (error instanceof Error) {
-            message = error.message;
-        } else if (typeof error === "string") {
-            message = error;
-        } else if (typeof error === "object" && error !== null && "message" in error) {
-            message = (error as { message: string }).message;
-        }
-        throw new Error(message);
-    }
-};
