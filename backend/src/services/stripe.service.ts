@@ -97,6 +97,51 @@ export class StripeService {
             } else {
                 throw new Error('Failed to create invoice');
             }
+        } else if (record.Invoice_Type == "Only Monthly Subscription") {
+            let subscription_scheduled_days = 1;
+            let subscription;
+            if (subscription_scheduled_days > 0) {
+                subscription = await this.stripe.subscriptionSchedules.create({
+                    customer: record.Stripe_Customer_ID,
+                    start_date: Math.floor(Date.now() / 1000) + (subscription_scheduled_days * 24 * 60 * 60),
+                    end_behavior: 'release',
+                    phases: [
+                        {
+                            items: record.Invoiced_Items.map((item) => ({
+                                price: item.Stripe_Price_ID,
+                                quantity: parseInt(item.Quantity) || 1,
+                            })),
+                            collection_method: "charge_automatically",
+                        },
+                    ],
+                    expand: ['latest_invoice.confirmation_secret'],
+                })
+            } else {
+                subscription = await this.stripe.subscriptions.create({
+                    customer: record.Stripe_Customer_ID,
+                    items: record.Invoiced_Items.map((item) => ({
+                        price: item.Stripe_Price_ID,
+                        quantity: parseInt(item.Quantity) || 1,
+                    })),
+                    payment_behavior: "default_incomplete",
+                    payment_settings: {
+                        payment_method_types: ["card", "us_bank_account"],
+                        save_default_payment_method: "on_subscription",
+                    },
+                    collection_method: "charge_automatically",
+                    expand: ['latest_invoice.confirmation_secret'],
+                });
+            }
+
+            const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
+            console.log(latestInvoice);
+
+            return {
+                client_secret: latestInvoice.confirmation_secret.client_secret,
+                subscription_id: subscription.id,
+                invoice_id: latestInvoice.id,
+            };
+
         } else {
             throw new Error("Invalid Invoice Type");
         }
