@@ -19,10 +19,6 @@ const CheckoutContent: React.FC = () => {
         );
     }
 
-    if(nextAction) {
-        return <NextAction />
-    }
-
     if (deactivatedLink === null || deactivatedLink === undefined) {
         return null;
     }
@@ -38,7 +34,7 @@ const CheckoutContent: React.FC = () => {
     return (
         <div className="space-y-8">
             <CheckoutHeader />
-            <PaymentForm />
+            {nextAction? <NextAction /> : <PaymentForm />}
         </div>
     );
 }
