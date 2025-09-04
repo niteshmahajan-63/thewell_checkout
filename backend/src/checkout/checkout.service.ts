@@ -36,6 +36,7 @@ export class CheckoutService {
             companyName: zohoRecord.Company_Name || null,
             customerEmail: zohoRecord.Customer_Email || null,
             deactivatedLink: zohoRecord.Deactivated_Link || null,
+            microdepositUrl: zohoRecord.Microdeposit_URL || {},
         };
 
         try {
@@ -139,6 +140,25 @@ export class CheckoutService {
 			return invoice.invoice_pdf || '';
 		} catch (error) {
 			this.logger.error(`Failed to download due invoice for record ${recordId}: ${error.message}`);
+			throw error;
+		}
+	}
+
+    async checkPaymentStatus(recordId: string): Promise<{ status: string }> {
+		this.logger.log(`Checking payment status for recordId: ${recordId}`);
+
+		try {
+			const paymentRecord = await this.checkoutRepository.getStripePaymentRecord(recordId);
+			
+			if (!paymentRecord) {
+				throw new Error(`Payment intent with ID ${recordId} not found`);
+			}
+
+			return {
+				status: paymentRecord.paymentStatus
+			};
+		} catch (error) {
+			this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
 			throw error;
 		}
 	}

@@ -1,7 +1,7 @@
 import { Controller, Get, Logger, Query } from '@nestjs/common';
 import { ApiResponse, createSuccessResponse } from 'src/common/utils';
 import { CheckoutService } from './checkout.service';
-import { GetRecordByIdDto } from './dto';
+import { CheckPaymentStatusDto, GetRecordByIdDto } from './dto';
 
 @Controller('api/checkout')
 export class CheckoutController {
@@ -70,6 +70,23 @@ export class CheckoutController {
 			return createSuccessResponse(pandadocSessionId, 'Due invoice downloaded successfully');
 		} catch (error) {
 			this.logger.error(`Failed to download due invoice for record ${recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Get('check-payment-status')
+	async checkPaymentStatus(
+		@Query() query: CheckPaymentStatusDto
+	): Promise<ApiResponse<{ status: string }>> {
+		const { recordId } = query;
+
+		this.logger.log(`Checking payment status for recordId: ${recordId}`);
+
+		try {
+			const response = await this.checkoutService.checkPaymentStatus(recordId);
+			return createSuccessResponse(response, 'Payment status checked successfully');
+		} catch (error) {
+			this.logger.error(`Failed to check payment status for recordId ${recordId}:`, error.message);
 			throw error;
 		}
 	}

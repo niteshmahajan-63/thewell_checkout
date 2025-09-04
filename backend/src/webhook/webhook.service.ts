@@ -135,6 +135,54 @@ export class WebhookService {
                     } else {
                         break;
                     }
+                case 'payment_intent.requires_action':
+                    this.logger.log('Stripe payment intent requires action');
+                    recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
+                    if (recordExist && recordExist.paymentStatus !== 'requires_action') {
+                        invoice = '';
+                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                        }
+
+                        if (typeof paymentIntent.payment_method === 'string') {
+                            formattedPaymentSource = await this.stripeService.getPaymentMethod(paymentIntent.payment_method);
+                        }
+
+                        amount = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
+
+                        this.logger.debug(`Storing payment intent: ${JSON.stringify(paymentIntent)}`);
+                        this.logger.debug(`Storing payment intent with microdeposit URL: ${paymentIntent.next_action?.verify_with_microdeposits?.hosted_verification_url}`);
+
+                        await this.webhookRepository.storeStripePayment({
+                            clientSecret: paymentIntent.client_secret,
+                            stripeCustomerId: paymentIntent.customer,
+                            paymentDate: new Date(paymentIntent.created * 1000),
+                            paymentStatus: paymentIntent.status,
+                            stripePaymentId: paymentIntent.id,
+                            amount: amount.toFixed(2),
+                            paymentSource: formattedPaymentSource,
+                            stripeInvoiceID: invoice ? invoice.id : null,
+                            hostedInvoiceUrl: invoice ? invoice.hosted_invoice_url : null,
+                            microdepositUrl: paymentIntent.next_action.verify_with_microdeposits.hosted_verification_url,
+                            createdAt: new Date(paymentIntent.created * 1000),
+                            updatedAt: new Date()
+                        });
+
+                        const payload = {
+                            Microdeposit_URL: {
+                                value: paymentIntent.next_action.verify_with_microdeposits.hosted_verification_url,
+                                url: paymentIntent.next_action.verify_with_microdeposits.hosted_verification_url
+                            },
+                        };
+                        await this.zohoService.updateRecord(recordExist.zohoRecordId, payload);
+
+                        return {
+                            message: 'Stripe payment_intent.requires_action event processed successfully',
+                            success: true
+                        };
+                    } else {
+                        break;
+                    }
                 case 'payment_intent.payment_failed':
                     this.logger.error('Stripe payment intent failed');
 

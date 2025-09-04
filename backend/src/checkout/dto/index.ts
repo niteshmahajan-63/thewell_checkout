@@ -5,3 +5,9 @@ export class GetRecordByIdDto {
 	@IsNotEmpty()
 	recordId: string;
 }
+
+export class CheckPaymentStatusDto {
+	@IsString()
+	@IsNotEmpty()
+	recordId: string;
+}

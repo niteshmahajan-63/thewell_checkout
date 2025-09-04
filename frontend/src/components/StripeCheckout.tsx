@@ -11,7 +11,7 @@ import { loadStripe } from '@stripe/stripe-js'
 import type { Appearance as StripeAppearance, StripeElementsOptions } from '@stripe/stripe-js'
 import { env } from '../config/env'
 import { useCheckoutContext } from '../contexts/CheckoutContext'
-import { downloadInvoice } from '../services/checkoutService'
+import { checkPaymentStatus, downloadInvoice } from '../services/checkoutService'
 import PaymentStatusModal from './PaymentStatusModal';
 
 interface Appearance extends StripeAppearance {
@@ -28,7 +28,7 @@ interface CheckoutFormProps {
 const stripePromise = loadStripe(env.STRIPE_PUBLISHABLE_KEY);
 
 const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
-    const { setCompleted, email } = useCheckoutContext();
+    const { setCompleted, email, setnextAction } = useCheckoutContext();
     const [isLoading, setIsLoading] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [paymentStatus, setPaymentStatus] = useState<'idle' | 'processing' | 'succeeded' | 'failed'>('idle');
@@ -39,6 +39,26 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
     const socketRef = useRef<Socket | null>(null);
 
     useEffect(() => {
+        if (recordId) {
+            const fetchPaymentStatus = async () => {
+                try {
+                    const status = await checkPaymentStatus(recordId);
+
+                    if (status == 'processing') {
+                        setPaymentStatus('processing');
+                        setMessage('Processing your payment – please don’t refresh or close this window.');
+                        setShowStatusModal(true);
+                    } else if (status == 'requires_action') {
+                        setnextAction(true);
+                    }
+                } catch (err) {
+                    console.error('Stripe payment intent error:', err);
+                }
+            };
+
+            fetchPaymentStatus();
+        }
+
         if (recordId && !socketRef.current) {
             const socket = io(`${env.SOCKET_URL}`, {
                 transports: ['websocket'],
@@ -145,6 +165,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                     setIsLoading(false);
                     break;
 
+                case 'requires_action':
+                    setnextAction(true);
+                    break;
+
                 default:
                     setMessage(`Payment status: ${paymentIntent.status}`);
                     setShowStatusModal(true);
@@ -230,7 +254,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 };
 
 const StripeCheckout: React.FC = () => {
-    const { recordId, company, amount, clientSecret, error } = useCheckoutContext();
+    const { recordId, company, amount, clientSecret, error, isLoading } = useCheckoutContext();
 
     const appearance: Appearance = {
         theme: 'flat',
@@ -293,6 +317,17 @@ const StripeCheckout: React.FC = () => {
             console.error('Error downloading invoice:', err);
         }
     };
+
+    if (isLoading) {
+        return (
+            <div className="flex justify-center items-center py-16">
+				<div className="flex items-center space-x-3">
+					<div className="w-6 h-6 border-2 border-well-primary border-t-transparent rounded-full animate-spin"></div>
+					<span className="text-gray-300">Loading...</span>
+				</div>
+			</div>
+        );
+    }
 
     return (
         <div className="w-full min-h-screen flex flex-col lg:flex-row bg-gray-50 overflow-x-hidden">

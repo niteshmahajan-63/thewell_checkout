@@ -12,6 +12,9 @@ interface CheckoutContextType {
   error: string | null
   completed: boolean | null
   setCompleted: (completed: boolean | null) => void
+  nextAction: boolean
+  setnextAction: (nextAction: boolean) => void
+  isLoading: boolean
   loadCheckoutData: () => Promise<void>
 }
 

@@ -4,6 +4,7 @@ import { getCheckoutByRecordId } from '../services/checkoutService'
 export const useCheckout = (recordId: string) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null)
     const [deactivatedLink, setDeactivatedLink] = useState<string | null>(null)
+    const [nextAction, setnextAction] = useState(false);
     const [completed, setCompleted] = useState<boolean | null>(null)
     const [amount, setAmount] = useState<string | null>(null)
     const [company, setCompany] = useState<string | null>(null)
@@ -52,5 +53,7 @@ export const useCheckout = (recordId: string) => {
         completed,
         setCompleted,
         loadCheckoutData,
+        nextAction,
+        setnextAction
     }
 }

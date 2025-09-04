@@ -59,3 +59,13 @@ export interface DownloadInvoiceResponse {
     statusCode: number;
     data: string;
 }
+
+export interface PaymentStatusResponse {
+    success: boolean;
+    message: string;
+    timestamp: string;
+    statusCode: number;
+    data: {
+        status: string;
+    };
+}

@@ -28,6 +28,7 @@ model CheckoutClient {
   companyName               String?                @map("company_name")
   customerEmail             String?                @map("customer_email")
   deactivatedLink           String?                @map("deactivated_link")
+  microdepositUrl           Json?                  @map("microdeposit_url")
   createdAt                 DateTime               @default(now()) @map("created_at")
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   invoiceItems              CheckoutInvoiceItems[]

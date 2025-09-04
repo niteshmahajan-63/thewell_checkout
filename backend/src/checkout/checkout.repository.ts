@@ -28,4 +28,10 @@ export class CheckoutRepository {
             where: { zohoRecordId }
         });
     }
+
+    async getStripePaymentRecord(recordId: string): Promise<any> {
+        return this.prisma.checkoutClient.findFirst({
+            where: { zohoRecordId: recordId },
+        });
+    }
 }

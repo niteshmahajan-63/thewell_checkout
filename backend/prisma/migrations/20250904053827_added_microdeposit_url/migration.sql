@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "public"."checkout_clients" ADD COLUMN     "microdeposit_url" TEXT;
