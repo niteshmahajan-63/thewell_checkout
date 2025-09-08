@@ -21,7 +21,12 @@ const NextAction: React.FC = () => {
                                 }}
                             >
                                 <p className="text-xl sm:text-2xl font-bold mb-3 sm:mb-4" style={{ color: '#000' }}>Microdeposit Verification Needed!</p>
-                                <p className="text-base sm:text-lg" style={{ color: '#000' }}>We will send you an email to verify your bank account using micro-deposits in few minutes.</p>
+                                <p className="text-base sm:text-lg" style={{ color: '#000' }}>We will send you an email to verify your bank account with microdeposits shortly. Please reach out to <a
+                                    href="mailto:clientcare@emailthewell.com"
+                                    className="text-blue-600 underline"
+                                >
+                                    clientcare@emailthewell.com
+                                </a>{" "} if you do not receive this email within the next 5 minutes.</p>
                             </div>
                         </div>
                     </CardContent>
