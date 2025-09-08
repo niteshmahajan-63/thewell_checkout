@@ -17,7 +17,11 @@ export class CheckoutRepository {
 
     async upsertCheckoutInvoiceItem(itemData: any): Promise<any> {
         return this.prisma.checkoutInvoiceItems.upsert({
-            where: { zohoRecordId: itemData.zohoRecordId, invoiceItemId: itemData.invoiceItemId },
+            where: {
+                invoiceItemId: itemData.invoiceItemId,
+                checkoutClientId: itemData.checkoutClientId,
+                id: itemData.id || 0,
+            },
             update: itemData,
             create: itemData,
         });

@@ -3,6 +3,7 @@ import { getCheckoutByRecordId } from '../services/checkoutService'
 
 export const useCheckout = (recordId: string) => {
     const [clientSecret, setClientSecret] = useState<string | null>(null)
+    const [invoiceType, setinvoiceType] = useState<string | null>(null)
     const [deactivatedLink, setDeactivatedLink] = useState<string | null>(null)
     const [nextAction, setnextAction] = useState(false);
     const [completed, setCompleted] = useState<boolean | null>(null)
@@ -23,10 +24,20 @@ export const useCheckout = (recordId: string) => {
             const record = response.data.record
 
             setDeactivatedLink(record.Deactivated_Link)
-            setAmount(record.Total_Amount || null)
+            if(record.Invoice_Type === "Both One-Time and Subscription") {
+                const oneTimeItem = record.Invoiced_Items.find((item: any) => item.Frequency === "One-Time");
+                if(oneTimeItem) {
+                    setAmount(oneTimeItem.Amount || null)
+                } else {
+                    setAmount(record.Total_Amount || null)
+                }
+            } else {
+                setAmount(record.Total_Amount || null)
+            }
             setCompany(record.Company_Name || null)
             setEmail(record.Customer_Email || null)
             setClientSecret(response.data.client_secret || null)
+            setinvoiceType(record.Invoice_Type || null)
             if(record.Payment_Status === 'succeeded') {
                 setCompleted(true)
             }
@@ -50,6 +61,7 @@ export const useCheckout = (recordId: string) => {
         company,
         email,
         clientSecret,
+        invoiceType,
         completed,
         setCompleted,
         loadCheckoutData,

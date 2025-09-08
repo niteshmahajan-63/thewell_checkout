@@ -105,6 +105,10 @@ export class WebhookService {
 
                         amount = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
 
+                        if(recordExist.Invoice_Type === "Both One-Time and Subscription") {
+                            await this.stripeService.createScheduledSubscription(recordExist);
+                        }
+
                         await this.webhookRepository.storeStripePayment({
                             clientSecret: paymentIntent.client_secret,
                             stripeCustomerId: paymentIntent.customer,
@@ -149,9 +153,6 @@ export class WebhookService {
                         }
 
                         amount = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
-
-                        this.logger.debug(`Storing payment intent: ${JSON.stringify(paymentIntent)}`);
-                        this.logger.debug(`Storing payment intent with microdeposit URL: ${paymentIntent.next_action?.verify_with_microdeposits?.hosted_verification_url}`);
 
                         await this.webhookRepository.storeStripePayment({
                             clientSecret: paymentIntent.client_secret,

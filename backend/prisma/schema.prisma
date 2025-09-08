@@ -38,7 +38,7 @@ model CheckoutClient {
 
 model CheckoutInvoiceItems {
   id                 Int            @id @default(autoincrement())
-  zohoRecordId       String         @unique @map("zoho_record_id")
+  zohoRecordId       String         @map("zoho_record_id")
   invoiceItemId      String         @map("invoice_item_id")
   stripePriceId      String?        @map("stripe_price_id")
   stripeProductId    String?        @map("stripe_product_id")
@@ -47,6 +47,7 @@ model CheckoutInvoiceItems {
   quantity           String?        @map("quantity")
   productDescription String?        @map("product_description")
   stripeDiscountId   String?        @map("stripe_discount_id")
+  frequency          String?        @map("frequency")
   zcdisplayValue     String?        @map("zc_display_value")
   createdAt          DateTime       @default(now()) @map("created_at")
   updatedAt          DateTime       @updatedAt @map("updated_at")

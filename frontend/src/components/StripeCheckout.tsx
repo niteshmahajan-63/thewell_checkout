@@ -73,7 +73,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 
             socket.on('connect', () => {
                 setSocketConnected(true);
-                console.info("socketConnected: ",socketConnected);
+                console.info("socketConnected: ", socketConnected);
                 socket.emit('join', { recordID: recordId });
             });
 
@@ -201,6 +201,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                                     email: 'never'
                                 }
                             },
+                            wallets: {
+                                applePay: 'auto',
+                                googlePay: 'auto',
+                                link: 'never',
+                            },
                             paymentMethodOrder: ['card', 'us_bank_account', 'customer_balance'],
                         }}
                     />
@@ -321,11 +326,11 @@ const StripeCheckout: React.FC = () => {
     if (isLoading) {
         return (
             <div className="flex justify-center items-center py-16">
-				<div className="flex items-center space-x-3">
-					<div className="w-6 h-6 border-2 border-well-primary border-t-transparent rounded-full animate-spin"></div>
-					<span className="text-gray-300">Loading...</span>
-				</div>
-			</div>
+                <div className="flex items-center space-x-3">
+                    <div className="w-6 h-6 border-2 border-well-primary border-t-transparent rounded-full animate-spin"></div>
+                    <span className="text-gray-300">Loading...</span>
+                </div>
+            </div>
         );
     }
 

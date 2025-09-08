@@ -98,43 +98,22 @@ export class StripeService {
                 throw new Error('Failed to create invoice');
             }
         } else if (record.Invoice_Type == "Only Monthly Subscription") {
-            let subscription_scheduled_days = 1;
-            let subscription;
-            if (subscription_scheduled_days > 0) {
-                subscription = await this.stripe.subscriptionSchedules.create({
-                    customer: record.Stripe_Customer_ID,
-                    start_date: Math.floor(Date.now() / 1000) + (subscription_scheduled_days * 24 * 60 * 60),
-                    end_behavior: 'release',
-                    phases: [
-                        {
-                            items: record.Invoiced_Items.map((item) => ({
-                                price: item.Stripe_Price_ID,
-                                quantity: parseInt(item.Quantity) || 1,
-                            })),
-                            collection_method: "charge_automatically",
-                        },
-                    ],
-                    expand: ['latest_invoice.confirmation_secret'],
-                })
-            } else {
-                subscription = await this.stripe.subscriptions.create({
-                    customer: record.Stripe_Customer_ID,
-                    items: record.Invoiced_Items.map((item) => ({
-                        price: item.Stripe_Price_ID,
-                        quantity: parseInt(item.Quantity) || 1,
-                    })),
-                    payment_behavior: "default_incomplete",
-                    payment_settings: {
-                        payment_method_types: ["card", "us_bank_account"],
-                        save_default_payment_method: "on_subscription",
-                    },
-                    collection_method: "charge_automatically",
-                    expand: ['latest_invoice.confirmation_secret'],
-                });
-            }
+            const subscription = await this.stripe.subscriptions.create({
+                customer: record.Stripe_Customer_ID,
+                items: record.Invoiced_Items.map((item) => ({
+                    price: item.Stripe_Price_ID,
+                    quantity: parseInt(item.Quantity) || 1,
+                })),
+                payment_behavior: "default_incomplete",
+                payment_settings: {
+                    payment_method_types: ["card", "us_bank_account"],
+                    save_default_payment_method: "on_subscription",
+                },
+                collection_method: "charge_automatically",
+                expand: ['latest_invoice.confirmation_secret'],
+            });
 
             const latestInvoice = subscription.latest_invoice as Stripe.Invoice;
-            console.log(latestInvoice);
 
             return {
                 client_secret: latestInvoice.confirmation_secret.client_secret,
@@ -142,8 +121,64 @@ export class StripeService {
                 invoice_id: latestInvoice.id,
             };
 
+        } else if (record.Invoice_Type == "Both One-Time and Subscription") {
+            const setupItem = record.Invoiced_Items.find(i => i.Frequency === "One-Time");
+
+            const invoice = await this.stripe.invoices.create({
+                customer: record.Stripe_Customer_ID,
+                collection_method: 'send_invoice',
+                days_until_due: 0,
+                payment_settings: {
+                    payment_method_types: ['card', 'us_bank_account'],
+                    payment_method_options: {
+                        card: {
+                            request_three_d_secure: 'automatic',
+                        },
+                    }
+                }
+            });
+
+            if (invoice) {
+                await this.stripe.invoiceItems.create({
+                    customer: record.Stripe_Customer_ID,
+                    invoice: invoice.id,
+                    amount: setupItem.Amount * 100,
+                    description: `${setupItem.Product_Name}, ${setupItem.Product_Description}`,
+                });
+
+                const finalizedInvoice = await this.stripe.invoices.finalizeInvoice(invoice.id);
+
+                const retrievedInvoice = await this.stripe.invoices.retrieve(invoice.id);
+
+                console.log(retrievedInvoice);
+            }
         } else {
             throw new Error("Invalid Invoice Type");
+        }
+    }
+
+    async createScheduledSubscription(record: Record<string, any>) {
+        try {
+            const subscriptionScheduledDays = parseInt(record.subscriptionScheduledDays, 10);
+            const startDate = Math.floor(Date.now() / 1000) + subscriptionScheduledDays * 24 * 60 * 60;
+            await this.stripe.subscriptionSchedules.create({
+                customer: record.Stripe_Customer_ID,
+                start_date: startDate,
+                end_behavior: 'release',
+                phases: [
+                    {
+                        items: [
+                            {
+                                price: record.Stripe_Price_ID,
+                                quantity: parseInt(record.Quantity) || 1,
+                            },
+                        ],
+                        iterations: 12,
+                    },
+                ],
+            });
+        } catch (error) {
+            throw new Error(`Failed to create scheduled subscription: ${error.message}`);
         }
     }
 }

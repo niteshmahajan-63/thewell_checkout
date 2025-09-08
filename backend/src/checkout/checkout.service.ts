@@ -54,6 +54,7 @@ export class CheckoutService {
                         quantity: item.Quantity || null,
                         productDescription: item.Product_Description || null,
                         stripeDiscountId: item.Stripe_Discount_ID || null,
+                        frequency: item.Frequency || null,
                         zcdisplayValue: item.zc_display_value || null,
                         checkoutClientId: savedCheckout.id,
                     };
