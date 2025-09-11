@@ -124,34 +124,18 @@ export class StripeService {
         } else if (record.Invoice_Type == "Both One-Time and Subscription") {
             const setupItem = record.Invoiced_Items.find(i => i.Frequency === "One-Time");
 
-            const invoice = await this.stripe.invoices.create({
+            const paymentIntent = await this.stripe.paymentIntents.create({
                 customer: record.Stripe_Customer_ID,
-                collection_method: 'send_invoice',
-                days_until_due: 0,
-                payment_settings: {
-                    payment_method_types: ['card', 'us_bank_account'],
-                    payment_method_options: {
-                        card: {
-                            request_three_d_secure: 'automatic',
-                        },
-                    }
-                }
+                amount: setupItem.Amount * 100,
+                currency: 'usd',
+                setup_future_usage: 'off_session',
+                payment_method_types: ['card', 'us_bank_account'],
             });
 
-            if (invoice) {
-                await this.stripe.invoiceItems.create({
-                    customer: record.Stripe_Customer_ID,
-                    invoice: invoice.id,
-                    amount: setupItem.Amount * 100,
-                    description: `${setupItem.Product_Name}, ${setupItem.Product_Description}`,
-                });
-
-                const finalizedInvoice = await this.stripe.invoices.finalizeInvoice(invoice.id);
-
-                const retrievedInvoice = await this.stripe.invoices.retrieve(invoice.id);
-
-                console.log(retrievedInvoice);
-            }
+            return {
+                client_secret: paymentIntent.client_secret,
+                invoice_id: "",
+            };
         } else {
             throw new Error("Invalid Invoice Type");
         }
