@@ -90,9 +90,11 @@ export class WebhookService {
                     if (recordExist && recordExist.paymentStatus !== 'succeeded') {
                         invoice = '';
 
-                        if(recordExist.invoiceType === "Both One-Time and Subscription") {
+                        if(recordExist.invoiceType === "Both One-Time and Subscription" && recordExist.subscriptionScheduled !== "Yes") {
                             invoice = await this.stripeService.getInvoice(recordExist.stripeInvoiceID);
+                            this.logger.log('creating scheduled subscription');
                             await this.stripeService.createScheduledSubscription(recordExist);
+                            await this.webhookRepository.markSubscriptionCreated(paymentIntent.client_secret);
                         } else {
                             if ('invoice' in paymentIntent && paymentIntent.invoice) {
                                 invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
@@ -266,6 +268,7 @@ export class WebhookService {
                             createdAt: new Date(paymentIntent.created * 1000),
                             updatedAt: new Date()
                         });
+                        return;
                     } else {
                         break;
                     }

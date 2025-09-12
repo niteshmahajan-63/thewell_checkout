@@ -29,6 +29,7 @@ model CheckoutClient {
   customerEmail             String?                @map("customer_email")
   deactivatedLink           String?                @map("deactivated_link")
   microdepositUrl           Json?                  @map("microdeposit_url")
+  subscriptionScheduled     String?                @map("subscription_scheduled")
   createdAt                 DateTime               @default(now()) @map("created_at")
   updatedAt                 DateTime               @updatedAt @map("updated_at")
   invoiceItems              CheckoutInvoiceItems[]

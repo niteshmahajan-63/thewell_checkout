@@ -46,4 +46,11 @@ export class WebhookRepository {
             throw error;
         }
     }
+
+    async markSubscriptionCreated(clientSecret: string): Promise<void> {
+        await this.prismaService.checkoutClient.update({
+            where: { clientSecret },
+            data: { subscriptionScheduled: "Yes" }
+        });
+    }
 }
