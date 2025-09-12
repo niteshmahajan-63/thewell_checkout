@@ -89,8 +89,14 @@ export class WebhookService {
                     recordExist = await this.webhookRepository.findStripePayment(paymentIntent.client_secret);
                     if (recordExist && recordExist.paymentStatus !== 'succeeded') {
                         invoice = '';
-                        if ('invoice' in paymentIntent && paymentIntent.invoice) {
-                            invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+
+                        if(recordExist.invoiceType === "Both One-Time and Subscription") {
+                            invoice = await this.stripeService.getInvoice(recordExist.stripeInvoiceID);
+                            await this.stripeService.createScheduledSubscription(recordExist);
+                        } else {
+                            if ('invoice' in paymentIntent && paymentIntent.invoice) {
+                                invoice = await this.stripeService.getInvoice((paymentIntent as any).invoice);
+                            }
                         }
 
                         if (typeof paymentIntent.payment_method === 'string') {
@@ -104,10 +110,6 @@ export class WebhookService {
                         }
 
                         amount = paymentIntent.amount ? paymentIntent.amount / 100 : 0;
-
-                        if(recordExist.Invoice_Type === "Both One-Time and Subscription") {
-                            await this.stripeService.createScheduledSubscription(recordExist);
-                        }
 
                         await this.webhookRepository.storeStripePayment({
                             clientSecret: paymentIntent.client_secret,

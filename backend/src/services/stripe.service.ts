@@ -1,8 +1,9 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import Stripe from 'stripe';
 
 @Injectable()
 export class StripeService {
+    private readonly logger = new Logger(StripeService.name);
     private stripe: Stripe;
 
     constructor() {
@@ -124,18 +125,50 @@ export class StripeService {
         } else if (record.Invoice_Type == "Both One-Time and Subscription") {
             const setupItem = record.Invoiced_Items.find(i => i.Frequency === "One-Time");
 
-            const paymentIntent = await this.stripe.paymentIntents.create({
+            let invoice = await this.stripe.invoices.create({
                 customer: record.Stripe_Customer_ID,
-                amount: setupItem.Amount * 100,
-                currency: 'usd',
-                setup_future_usage: 'off_session',
-                payment_method_types: ['card', 'us_bank_account'],
+                collection_method: 'charge_automatically',
+                payment_settings: {
+                    payment_method_types: ['card', 'us_bank_account'],
+                }
             });
 
-            return {
-                client_secret: paymentIntent.client_secret,
-                invoice_id: "",
-            };
+            if (invoice) {
+                await this.stripe.invoiceItems.create({
+                    customer: record.Stripe_Customer_ID,
+                    invoice: invoice.id,
+                    amount: setupItem.Amount * 100,
+                    description: `${setupItem.Product_Name}, ${setupItem.Product_Description}`,
+                });
+
+                let paymentIntent = await this.stripe.paymentIntents.create({
+                    customer: record.Stripe_Customer_ID,
+                    amount: setupItem.Amount * 100,
+                    currency: 'usd',
+                    setup_future_usage: 'off_session',
+                    confirmation_method: 'automatic',
+                    payment_method_types: ['card', 'us_bank_account'],
+                });
+
+                await this.stripe.invoices.finalizeInvoice(invoice.id, {
+                    expand: ['confirmation_secret'],
+                });
+                
+                invoice = await this.stripe.invoices.attachPayment(
+                    invoice.id,
+                    {
+                        payment_intent: paymentIntent.id,
+                        expand: ['payments'],
+                    }
+                );
+
+                return {
+                    client_secret: paymentIntent.client_secret,
+                    invoice_id: invoice.id,
+                };
+            } else {
+                throw new Error('Failed to create invoice');
+            }
         } else {
             throw new Error("Invalid Invoice Type");
         }
@@ -143,18 +176,19 @@ export class StripeService {
 
     async createScheduledSubscription(record: Record<string, any>) {
         try {
+            const MonthlyItem = record.invoiceItems.find(i => i.frequency === "Monthly");
             const subscriptionScheduledDays = parseInt(record.subscriptionScheduledDays, 10);
             const startDate = Math.floor(Date.now() / 1000) + subscriptionScheduledDays * 24 * 60 * 60;
             await this.stripe.subscriptionSchedules.create({
-                customer: record.Stripe_Customer_ID,
+                customer: record.stripeCustomerId,
                 start_date: startDate,
                 end_behavior: 'release',
                 phases: [
                     {
                         items: [
                             {
-                                price: record.Stripe_Price_ID,
-                                quantity: parseInt(record.Quantity) || 1,
+                                price: MonthlyItem.stripePriceId,
+                                quantity: parseInt(MonthlyItem.quantity) || 1,
                             },
                         ],
                         iterations: 12,

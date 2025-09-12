@@ -12,7 +12,10 @@ export class WebhookRepository {
             return await this.prismaService.checkoutClient.findFirst({
                 where: {
                     clientSecret: clientSecret
-                }
+                },
+                include: {
+                    invoiceItems: true,
+                },
             });
         } catch (error) {
             this.logger.error(`Error finding Stripe payment: ${error.message}`);

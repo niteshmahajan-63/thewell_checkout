@@ -17,6 +17,7 @@ interface CheckoutContextType {
   setnextAction: (nextAction: boolean) => void
   isLoading: boolean
   loadCheckoutData: () => Promise<void>
+  invoiceBtn: boolean
 }
 
 interface CheckoutProviderProps {

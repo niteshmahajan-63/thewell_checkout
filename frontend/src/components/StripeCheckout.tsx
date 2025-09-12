@@ -259,7 +259,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 };
 
 const StripeCheckout: React.FC = () => {
-    const { recordId, company, amount, clientSecret, error, isLoading } = useCheckoutContext();
+    const { recordId, company, amount, clientSecret, error, isLoading, invoiceBtn } = useCheckoutContext();
 
     const appearance: Appearance = {
         theme: 'flat',
@@ -372,19 +372,21 @@ const StripeCheckout: React.FC = () => {
                                 alt="Visual Card"
                                 className="w-full max-w-[30rem] h-auto aspect-[16/9] object-cover rounded-2xl shadow-2xl border border-white/20 bg-white/10 backdrop-blur-sm"
                             />
-                            <button
-                                className="absolute top-4 left-1/2 transform -translate-x-1/2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg transition-all duration-200 text-sm sm:text-base font-medium"
-                                style={{
-                                    backgroundColor: '#BE9E44',
-                                    color: '#fff',
-                                    transition: 'background-color 0.2s ease-in-out'
-                                }}
-                                onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#967D35'}
-                                onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#BE9E44'}
-                                onClick={handleDownloadInvoice}
-                            >
-                                Download Invoice
-                            </button>
+                            {invoiceBtn && (
+                                <button
+                                    className="absolute top-4 left-1/2 transform -translate-x-1/2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg transition-all duration-200 text-sm sm:text-base font-medium"
+                                    style={{
+                                        backgroundColor: '#BE9E44',
+                                        color: '#fff',
+                                        transition: 'background-color 0.2s ease-in-out'
+                                    }}
+                                    onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#967D35'}
+                                    onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#BE9E44'}
+                                    onClick={handleDownloadInvoice}
+                                >
+                                    Download Invoice
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

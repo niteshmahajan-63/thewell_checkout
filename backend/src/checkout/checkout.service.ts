@@ -76,21 +76,28 @@ export class CheckoutService {
 
     async getRecord(
         recordId: string,
-    ): Promise<{ record: Record<string, any>; client_secret: string }> {
+    ): Promise<{ record: Record<string, any>; client_secret: string, invoice: boolean }> {
         const zohoRecord = await this.zohoService.getRecordById(recordId);
 
         let client_secret = null;
+        let invoice = true;
 
         const existingPaymentIntent = await this.checkoutRepository.getCheckoutByZohoRecordId(recordId);
-        
+
         if (existingPaymentIntent && existingPaymentIntent.clientSecret !== null) {
             client_secret = existingPaymentIntent.clientSecret;
+            if(existingPaymentIntent.stripeInvoiceID == "") {
+                invoice = false;
+            }
         } else {
             const paymentIntent = await this.stripeService.createCheckoutPaymentIntent(zohoRecord);
             if (paymentIntent) {
                 await this.getRecordById(zohoRecord);
                 client_secret = paymentIntent.client_secret;
                 const invoice_id = paymentIntent.invoice_id;
+                if (invoice_id == "") {
+                    invoice = false;
+                }
                 await this.checkoutRepository.upsertCheckout({
                     zohoRecordId: recordId,
                     clientSecret: client_secret,
@@ -101,66 +108,67 @@ export class CheckoutService {
             }
         }
 
-        return { 
-            record: zohoRecord, 
-            client_secret 
+        return {
+            record: zohoRecord,
+            client_secret,
+            invoice
         };
     }
 
     async downloadInvoice(recordId: string): Promise<string> {
-		this.logger.log(`Downloading invoice for record: ${recordId}`);
+        this.logger.log(`Downloading invoice for record: ${recordId}`);
 
-		try {
-			const stripePaymentRecord = await this.checkoutRepository.getCheckoutByZohoRecordId(recordId);
-			if (!stripePaymentRecord) {
-				throw new Error(`No Stripe payment record found for record ID ${recordId}`);
-			}
-			return stripePaymentRecord.hostedInvoiceUrl;
-		} catch (error) {
-			this.logger.error(`Failed to download invoice for record ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
+        try {
+            const stripePaymentRecord = await this.checkoutRepository.getCheckoutByZohoRecordId(recordId);
+            if (!stripePaymentRecord) {
+                throw new Error(`No Stripe payment record found for record ID ${recordId}`);
+            }
+            return stripePaymentRecord.hostedInvoiceUrl;
+        } catch (error) {
+            this.logger.error(`Failed to download invoice for record ${recordId}: ${error.message}`);
+            throw error;
+        }
+    }
 
     async downloadDueInvoice(recordId: string): Promise<string> {
-		this.logger.log(`Downloading due invoice for record: ${recordId}`);
+        this.logger.log(`Downloading due invoice for record: ${recordId}`);
 
-		try {
-			const stripePaymentRecord = await this.checkoutRepository.getCheckoutByZohoRecordId(recordId);
+        try {
+            const stripePaymentRecord = await this.checkoutRepository.getCheckoutByZohoRecordId(recordId);
             console.log(stripePaymentRecord);
-            
 
-			if (!stripePaymentRecord || !stripePaymentRecord.stripeInvoiceID) {
-				throw new Error(`No Invoice found for record ID ${recordId}`);
-			}
 
-			const invoice = await this.stripeService.getInvoice(stripePaymentRecord.stripeInvoiceID);
-			if (!invoice) {
-				throw new Error(`No Stripe payment record found for record ID ${recordId}`);
-			}
-			return invoice.invoice_pdf || '';
-		} catch (error) {
-			this.logger.error(`Failed to download due invoice for record ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
+            if (!stripePaymentRecord || !stripePaymentRecord.stripeInvoiceID) {
+                throw new Error(`No Invoice found for record ID ${recordId}`);
+            }
+
+            const invoice = await this.stripeService.getInvoice(stripePaymentRecord.stripeInvoiceID);
+            if (!invoice) {
+                throw new Error(`No Stripe payment record found for record ID ${recordId}`);
+            }
+            return invoice.invoice_pdf || '';
+        } catch (error) {
+            this.logger.error(`Failed to download due invoice for record ${recordId}: ${error.message}`);
+            throw error;
+        }
+    }
 
     async checkPaymentStatus(recordId: string): Promise<{ status: string }> {
-		this.logger.log(`Checking payment status for recordId: ${recordId}`);
+        this.logger.log(`Checking payment status for recordId: ${recordId}`);
 
-		try {
-			const paymentRecord = await this.checkoutRepository.getStripePaymentRecord(recordId);
-			
-			if (!paymentRecord) {
-				throw new Error(`Payment intent with ID ${recordId} not found`);
-			}
+        try {
+            const paymentRecord = await this.checkoutRepository.getStripePaymentRecord(recordId);
 
-			return {
-				status: paymentRecord.paymentStatus
-			};
-		} catch (error) {
-			this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
-			throw error;
-		}
-	}
+            if (!paymentRecord) {
+                throw new Error(`Payment intent with ID ${recordId} not found`);
+            }
+
+            return {
+                status: paymentRecord.paymentStatus
+            };
+        } catch (error) {
+            this.logger.error(`Failed to check payment status for recordId ${recordId}: ${error.message}`);
+            throw error;
+        }
+    }
 }

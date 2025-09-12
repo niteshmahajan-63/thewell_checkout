@@ -6,6 +6,7 @@ export interface CheckoutRecordResponse {
     data: {
         record: CheckoutRecord;
         client_secret: string;
+        invoice: boolean;
     };
 }
 

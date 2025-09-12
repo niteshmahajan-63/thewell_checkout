@@ -12,6 +12,7 @@ export const useCheckout = (recordId: string) => {
     const [email, setEmail] = useState<string | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [invoiceBtn, setInvoiceBtn] = useState(false)
 
     const loadCheckoutData = useCallback(async () => {
         if (!recordId || recordId.trim() === '') return
@@ -41,6 +42,9 @@ export const useCheckout = (recordId: string) => {
             if(record.Payment_Status === 'succeeded') {
                 setCompleted(true)
             }
+            if(response.data.invoice === true) {
+                setInvoiceBtn(true)
+            }
         } catch (error) {
             setError(error instanceof Error ? error.message : 'Failed to load checkout data')
         } finally {
@@ -66,6 +70,7 @@ export const useCheckout = (recordId: string) => {
         setCompleted,
         loadCheckoutData,
         nextAction,
-        setnextAction
+        setnextAction,
+        invoiceBtn
     }
 }
