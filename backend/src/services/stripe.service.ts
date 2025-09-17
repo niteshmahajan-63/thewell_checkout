@@ -77,7 +77,7 @@ export class StripeService {
                         customer: record.Stripe_Customer_ID,
                         invoice: invoice.id,
                         amount: item.Amount * 100,
-                        description: `${item.Product_Name}, ${item.Product_Description}`,
+                        description: `${item.Product_Name.toUpperCase()} (${item.Product_Description})`,
                     });
                 }
 
@@ -138,7 +138,7 @@ export class StripeService {
                     customer: record.Stripe_Customer_ID,
                     invoice: invoice.id,
                     amount: setupItem.Amount * 100,
-                    description: `${setupItem.Product_Name}, ${setupItem.Product_Description}`,
+                    description: `${setupItem.Product_Name.toUpperCase()} (${setupItem.Product_Description})`,
                 });
 
                 let paymentIntent = await this.stripe.paymentIntents.create({
