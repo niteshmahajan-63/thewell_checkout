@@ -2,22 +2,20 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { AppModule } from './app.module';
 import * as express from 'express';
+import { SlackService } from './common/slack.service';
+import { GlobalExceptionFilter } from './common/global-exception.filter';
 
 async function bootstrap() {
 	const logger = new Logger('Bootstrap');
-	// Use default NestJS setup with body parsing enabled
 	const app = await NestFactory.create(AppModule);
 
-	// Use raw body parsing only for the Stripe webhook route
-	// This middleware must be registered before any other body parser
-	app.use('/api/webhook/stripe', express.raw({
+	app.use('/api/webhook/stripe', express.raw({ 
 		type: 'application/json',
-		limit: '10mb' // Adjust limit if needed
+		limit: '10mb'
 	}));
 
-	// Regular body parsers for all other routes
-	app.use(express.json());
-	app.use(express.urlencoded({ extended: true }));
+	app.use(express.json({ limit: '10mb' }));
+	app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 	app.enableCors({
 		origin: [
@@ -34,6 +32,9 @@ async function bootstrap() {
 			forbidNonWhitelisted: true,
 		}),
 	);
+
+	const slackService = app.get(SlackService);
+	app.useGlobalFilters(new GlobalExceptionFilter(slackService));
 
 	const port = process.env.PORT || 4000;
 	await app.listen(port);

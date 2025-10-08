@@ -8,6 +8,7 @@ import { zohoConfig } from 'src/config/zoho.config';
 import { CheckoutRepository } from './checkout.repository';
 import { PrismaService } from 'src/common/prisma.service';
 import { StripeService } from 'src/services/stripe.service';
+import { SlackService } from 'src/common/slack.service';
 
 @Module({
 	imports: [
@@ -20,7 +21,8 @@ import { StripeService } from 'src/services/stripe.service';
 		CheckoutRepository,
 		PrismaService,
 		StripeService,
-		ZohoService
+		ZohoService,
+		SlackService
 	],
 	exports: [CheckoutService],
 })

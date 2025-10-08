@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ZohoService } from '../services/zoho.service';
 import { CheckoutRepository } from './checkout.repository';
 import { StripeService } from 'src/services/stripe.service';
+import { SendSlackMessageDto } from './dto';
+import { ErrorInfo, SlackService } from 'src/common/slack.service';
 
 @Injectable()
 export class CheckoutService {
@@ -11,6 +13,7 @@ export class CheckoutService {
         private readonly zohoService: ZohoService,
         private readonly stripeService: StripeService,
         private readonly checkoutRepository: CheckoutRepository,
+		private readonly slackService: SlackService,
     ) { }
 
     async getRecords(): Promise<Record<string, any>> {
@@ -171,4 +174,57 @@ export class CheckoutService {
             throw error;
         }
     }
+
+    async sendSlackMessage(slackMessageDto: SendSlackMessageDto): Promise<void> {
+		try {
+			if (slackMessageDto.message && !slackMessageDto.errorMessage) {
+				await this.slackService.sendMessage(slackMessageDto.message);
+				this.logger.log('Simple Slack message sent successfully');
+			} else if (slackMessageDto.errorMessage || slackMessageDto.errorType) {
+				const errorInfo: ErrorInfo = {
+					errorMessage: slackMessageDto.errorMessage || 'Frontend Error',
+					statusCode: this.getStatusCodeFromErrorType(slackMessageDto.errorType),
+					endpoint: slackMessageDto.page || 'Frontend',
+					method: slackMessageDto.userAction || 'USER_ACTION',
+					stackTrace: slackMessageDto.errorStack,
+					timestamp: new Date().toISOString(),
+					recordId: slackMessageDto.recordId,
+				};
+
+				await this.slackService.sendFrontendErrorAlert(errorInfo, {
+					component: slackMessageDto.component,
+					page: slackMessageDto.page,
+					userAction: slackMessageDto.userAction,
+					browserInfo: slackMessageDto.browserInfo,
+					errorType: slackMessageDto.errorType,
+					severity: slackMessageDto.severity,
+					additionalContext: slackMessageDto.additionalContext,
+				});
+				
+				this.logger.log('Frontend error alert sent to Slack successfully');
+			} else {
+				await this.slackService.sendMessage('Empty notification from frontend');
+				this.logger.log('Fallback Slack message sent successfully');
+			}
+		} catch (error) {
+			this.logger.error(`Failed to send Slack message: ${error.message}`);
+			throw error;
+		}
+	}
+
+	private getStatusCodeFromErrorType(errorType?: string): number {
+		switch (errorType) {
+			case 'javascript':
+				return 500;
+			case 'api':
+				return 502;
+			case 'network':
+				return 503;
+			case 'validation':
+				return 400;
+			case 'general':
+			default:
+				return 500;
+		}
+	}
 }

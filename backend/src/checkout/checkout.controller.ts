@@ -1,7 +1,7 @@
-import { Controller, Get, Logger, Query } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Query } from '@nestjs/common';
 import { ApiResponse, createSuccessResponse } from 'src/common/utils';
 import { CheckoutService } from './checkout.service';
-import { CheckPaymentStatusDto, GetRecordByIdDto } from './dto';
+import { CheckPaymentStatusDto, GetRecordByIdDto, SendSlackMessageDto } from './dto';
 
 @Controller('api/checkout')
 export class CheckoutController {
@@ -87,6 +87,21 @@ export class CheckoutController {
 			return createSuccessResponse(response, 'Payment status checked successfully');
 		} catch (error) {
 			this.logger.error(`Failed to check payment status for recordId ${recordId}:`, error.message);
+			throw error;
+		}
+	}
+
+	@Post('send-slack-message')
+	async sendSlackMessage(
+		@Body() slackMessageDto: SendSlackMessageDto,
+	): Promise<ApiResponse<null>> {
+		this.logger.log(`Processing Slack message request`);
+
+		try {
+			await this.checkoutService.sendSlackMessage(slackMessageDto);
+			return createSuccessResponse(null, 'Slack message sent successfully');
+		} catch (error) {
+			this.logger.error(`Failed to send Slack message:`, error.message);
 			throw error;
 		}
 	}
