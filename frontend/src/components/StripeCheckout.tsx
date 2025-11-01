@@ -166,7 +166,9 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                     break;
 
                 case 'requires_action':
-                    setnextAction(true);
+                    if (paymentIntent.next_action?.type === 'verify_with_microdeposits') {
+                        setnextAction(true);
+                    }
                     break;
 
                 default:
