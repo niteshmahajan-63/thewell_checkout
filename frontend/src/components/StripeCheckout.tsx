@@ -73,7 +73,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
 
             socket.on('connect', () => {
                 setSocketConnected(true);
-                console.info("socketConnected: ", socketConnected);
+                console.info("Socket connected successfully", socketConnected);
                 socket.emit('join', { recordID: recordId });
             });
 
@@ -92,11 +92,13 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ recordId }) => {
                 setIsLoading(false);
             });
 
-            socket.on('connect_error', () => {
+            socket.on('connect_error', (error) => {
+                console.error('Socket connection error:', error);
                 setSocketConnected(false);
             });
 
-            socket.on('disconnect', () => {
+            socket.on('disconnect', (reason) => {
+                console.warn('Socket disconnected:', reason);
                 setSocketConnected(false);
             });
 
