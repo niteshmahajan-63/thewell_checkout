@@ -12,8 +12,8 @@ const CheckoutContent: React.FC = () => {
         return (
             <div className="flex justify-center items-center py-16">
 				<div className="flex items-center space-x-3">
-					<div className="w-6 h-6 border-2 border-well-primary border-t-transparent rounded-full animate-spin"></div>
-					<span className="text-gray-300">Loading...</span>
+					<div className="w-6 h-6 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#BE9E44', borderTopColor: 'transparent' }}></div>
+					<span style={{ color: '#C2BDB4', fontFamily: '"Inter", sans-serif', letterSpacing: '0.05em' }}>Loading...</span>
 				</div>
 			</div>
         );
