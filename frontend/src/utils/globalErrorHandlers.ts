@@ -1,9 +1,22 @@
 import { errorReportingService } from '../services/errorReportingService';
 
+// Known noisy errors that don't originate from our app code (e.g. browser
+// extensions like wallets/password managers poking at stale DOM references).
+// These are filtered out before reporting so they don't spam Slack.
+const IGNORED_ERROR_PATTERNS: RegExp[] = [
+    /Object Not Found Matching Id.*MethodName:update/i,
+];
+
+function shouldIgnoreError(message: string): boolean {
+    return IGNORED_ERROR_PATTERNS.some((pattern) => pattern.test(message));
+}
+
 export function initializeGlobalErrorHandlers(): void {
     window.addEventListener('error', (event) => {
         const error = event.error || new Error(event.message);
-        
+
+        if (shouldIgnoreError(error.message)) return;
+
         errorReportingService.reportError(error, {
             component: 'GlobalErrorHandler',
             userAction: 'Unknown (uncaught error)',
@@ -20,9 +33,11 @@ export function initializeGlobalErrorHandlers(): void {
     });
 
     window.addEventListener('unhandledrejection', (event) => {
-        const error = event.reason instanceof Error 
-            ? event.reason 
+        const error = event.reason instanceof Error
+            ? event.reason
             : new Error(String(event.reason));
+
+        if (shouldIgnoreError(error.message)) return;
 
         errorReportingService.reportError(error, {
             component: 'GlobalErrorHandler',
